@@ -1,9 +1,5 @@
 # ✈️ Flight Fare Prediction System
 
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python)](https://www.python.org/)  
-[![Flask](https://img.shields.io/badge/Flask-2.3.2-orange?logo=flask)](https://flask.palletsprojects.com/)  
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-
 A **machine learning-based web application** that predicts flight prices based on parameters such as airline, duration, stops, and class. Helps users make **data-driven decisions** when booking flights.  
 
 ---
