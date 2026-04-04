@@ -1,42 +1,43 @@
- # app.py
 import streamlit as st
 import numpy as np
 import joblib
 import requests
 import os
 
+# --- Page config ---
 st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
 st.title("✈️ Flight Fare Prediction System")
 
-# --- Google Drive URLs ---
-MODEL_URL = "https://drive.google.com/uc?export=download&id=18mPXAbmTsLtHiTicU5zqVRnlNuh4JZtq"
-SCALER_URL = "https://drive.google.com/uc?export=download&id=1XIhTSh2Lg06DqGEoXCJZAIldrCs8FoNZ"
-COLUMN_URL = "https://drive.google.com/uc?export=download&id=1n5ZcUskBSywo6Lic9s5hQsyZ9NWot_-r"
+# --- Google Drive direct download links ---
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1hbQpTK4wsh9geeRPJMxpEFlisnYLqwVv"
+SCALER_URL = "https://drive.google.com/uc?export=download&id=1fW7vsJ7gFa5r3SYsDp61FUByAIEQD3Qa"
+COLUMN_URL = "https://drive.google.com/uc?export=download&id=1SAfTzitXG0b_iQDbUuD61IU0SODrT69j"
 
 # --- Local file paths ---
-MODEL_PATH = "model_compressed.pkl"
-SCALER_PATH = "scaler_compressed.pkl"
-COLUMN_PATH = "column_compressed.pkl"
+MODEL_PATH = "model.pkl"
+SCALER_PATH = "scaler.pkl"
+COLUMN_PATH = "column.pkl"
 
-# --- Download function ---
+# --- Function to download files if they don't exist ---
 def download_file(url, path):
     if not os.path.exists(path):
         r = requests.get(url)
         with open(path, "wb") as f:
             f.write(r.content)
 
-# Download all files if missing
+# Download all files
 download_file(MODEL_URL, MODEL_PATH)
 download_file(SCALER_URL, SCALER_PATH)
 download_file(COLUMN_URL, COLUMN_PATH)
 
-# --- Load model and preprocessing ---
+# --- Load model and preprocessing objects ---
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 le_dict = joblib.load(COLUMN_PATH)
 
-# --- Sidebar Inputs ---
+# --- Sidebar inputs ---
 st.sidebar.header("Enter Flight Details")
+
 airline = st.sidebar.selectbox("Airline", le_dict['airline'].classes_)
 source = st.sidebar.selectbox("Source City", le_dict['source_city'].classes_)
 destination = st.sidebar.selectbox("Destination City", le_dict['destination_city'].classes_)
@@ -60,10 +61,14 @@ input_vector = np.array([
     days_left
 ]).reshape(1, -1)
 
-# Scale numeric columns (duration, stops, days_left)
-input_vector[:,6:] = scaler.transform(input_vector[:,6:])
+# --- Scale numeric columns: duration, stops, days_left ---
+input_vector[:, 6:] = scaler.transform(input_vector[:, 6:])
 
-# --- Prediction ---
+# --- Predict button ---
 if st.button("Predict Fare"):
     price = model.predict(input_vector)[0]
     st.success(f"💰 Estimated Flight Fare: ₹ {round(price,2)}")
+
+
+
+   
