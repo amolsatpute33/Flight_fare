@@ -68,7 +68,3 @@ input_vector[:, 6:] = scaler.transform(input_vector[:, 6:])
 if st.button("Predict Fare"):
     price = model.predict(input_vector)[0]
     st.success(f"💰 Estimated Flight Fare: ₹ {round(price,2)}")
-
-
-  
-   
