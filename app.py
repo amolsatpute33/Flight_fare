@@ -79,3 +79,4 @@ if submitted:
         st.success(f"Predicted Flight Price: ₹ {round(pred_price, 2)}")
     except Exception as e:
         st.error(f"Prediction Error: {e}")
+    
