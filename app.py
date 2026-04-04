@@ -4,12 +4,12 @@ import joblib
 import requests
 import os
 
-st.set_page_config(page_title="Flight Fare Predictor", layout="centered")
+st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
 st.title("✈️ Flight Fare Prediction System")
 
-# ==============================
-# 🔗 GOOGLE DRIVE LINKS (YOUR FILES)
-# ==============================
+# ============================
+# 🔗 YOUR GOOGLE DRIVE LINKS (FIXED)
+# ============================
 
 MODEL_URL = "https://drive.google.com/uc?export=download&id=1cEDCDXAhfdsNktxaG8wonuacICZr0Nu-"
 SCALER_URL = "https://drive.google.com/uc?export=download&id=1THFl_dhkT6lVnhwH5OA7vBUziI0aD3Cx"
@@ -19,43 +19,41 @@ MODEL_PATH = "model.pkl"
 SCALER_PATH = "scaler.pkl"
 COLUMN_PATH = "column.pkl"
 
-# ==============================
-# 📥 DOWNLOAD FUNCTION (SAFE)
-# ==============================
+# ============================
+# 📥 DOWNLOAD FUNCTION
+# ============================
 
 def download_file(url, filename):
     if not os.path.exists(filename):
-        with st.spinner(f"Downloading {filename}..."):
-            response = requests.get(url)
-            if response.status_code == 200:
-                with open(filename, "wb") as f:
-                    f.write(response.content)
-            else:
-                st.error(f"❌ Failed to download {filename}")
-                st.stop()
+        try:
+            r = requests.get(url)
+            with open(filename, "wb") as f:
+                f.write(r.content)
+        except:
+            st.error(f"❌ Error downloading {filename}")
+            st.stop()
 
-# Download all files
 download_file(MODEL_URL, MODEL_PATH)
 download_file(SCALER_URL, SCALER_PATH)
 download_file(COLUMN_URL, COLUMN_PATH)
 
-# ==============================
-# 📦 LOAD FILES (ERROR SAFE)
-# ==============================
+# ============================
+# 📦 LOAD FILES
+# ============================
 
 try:
     model = joblib.load(MODEL_PATH)
     scaler = joblib.load(SCALER_PATH)
     le_dict = joblib.load(COLUMN_PATH)
 except Exception as e:
-    st.error("❌ Model loading failed!")
-    st.error("👉 Reason: Model trained in different environment or missing library")
+    st.error("❌ Model Load Error")
+    st.write("👉 Your model is incompatible or missing libraries")
     st.code(str(e))
     st.stop()
 
-# ==============================
+# ============================
 # 🎛️ USER INPUT
-# ==============================
+# ============================
 
 st.sidebar.header("Enter Flight Details")
 
@@ -70,9 +68,9 @@ duration = st.sidebar.number_input("Duration (hours)", 0.0, 20.0, 2.0)
 stops = st.sidebar.number_input("Stops", 0, 3, 0)
 days_left = st.sidebar.number_input("Days Left", 0, 365, 1)
 
-# ==============================
+# ============================
 # 🔄 PREPROCESS INPUT
-# ==============================
+# ============================
 
 try:
     input_data = np.array([
@@ -87,23 +85,24 @@ try:
         days_left
     ]).reshape(1, -1)
 
-    # Scale numeric
     input_data[:, 6:] = scaler.transform(input_data[:, 6:])
 
 except Exception as e:
-    st.error("❌ Input processing error")
+    st.error("❌ Input Processing Error")
     st.code(str(e))
     st.stop()
 
-# ==============================
-# 🔮 PREDICTION
-# ==============================
+# ============================
+# 🔮 PREDICT
+# ============================
 
 if st.button("Predict Fare 💰"):
     try:
-        prediction = model.predict(input_data)[0]
-        st.success(f"✈️ Estimated Fare: ₹ {round(prediction, 2)}")
+        result = model.predict(input_data)[0]
+        st.success(f"✈️ Estimated Fare: ₹ {round(result, 2)}")
     except Exception as e:
-        st.error("❌ Prediction failed")
+        st.error("❌ Prediction Error")
         st.code(str(e))
+
+
 
