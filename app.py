@@ -5,15 +5,9 @@ import joblib
 import gdown
 import os
 
-# -----------------------------
-# PAGE CONFIG
-# -----------------------------
 st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
 st.title("✈️ Flight Fare Prediction App")
 
-# -----------------------------
-# MODEL DOWNLOAD
-# -----------------------------
 MODEL_URL = "https://drive.google.com/uc?id=1BH0C5HxnixA4Bbt5BXmuKSLgkNiin64B"
 MODEL_PATH = "model.pkl"
 
@@ -32,7 +26,6 @@ st.success("✅ Model Loaded Successfully!")
 # USER INPUT
 # -----------------------------
 st.subheader("Enter Flight Details")
-
 airline = st.selectbox("Airline", ["SpiceJet", "AirAsia", "Vistara", "GO_FIRST", "IndiGo", "Air India"])
 flight = st.text_input("Flight Code (e.g. SG-8709)")
 source_city = st.selectbox("Source City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"])
@@ -49,8 +42,8 @@ days_left = st.number_input("Days Left", 1, 50)
 # -----------------------------
 if st.button("Predict Price 💰"):
     try:
-        # Build input DataFrame
-        input_dict = {
+        # Build input DataFrame with EXACT column names from training
+        input_df = pd.DataFrame([{
             "airline": airline,
             "flight": flight,
             "source_city": source_city,
@@ -61,11 +54,9 @@ if st.button("Predict Price 💰"):
             "class": flight_class,
             "duration": duration,
             "days_left": days_left
-        }
+        }])
 
-        input_df = pd.DataFrame([input_dict])
-
-        # Predict using Pipeline
+        # Use pipeline directly (handles encoding + prediction)
         predicted_price = model.predict(input_df)[0]
         st.success(f"✈️ Estimated Flight Price: ₹ {round(predicted_price, 2)}")
 
