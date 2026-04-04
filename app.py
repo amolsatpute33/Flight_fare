@@ -1,22 +1,22 @@
-# app.py
+ # app.py
 import streamlit as st
-import pickle
 import numpy as np
+import joblib
 import requests
 import os
 
 st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
 st.title("✈️ Flight Fare Prediction System")
 
-# --- Direct download URLs ---
+# --- Google Drive URLs ---
+MODEL_URL = "https://drive.google.com/uc?export=download&id=18mPXAbmTsLtHiTicU5zqVRnlNuh4JZtq"
 SCALER_URL = "https://drive.google.com/uc?export=download&id=1XIhTSh2Lg06DqGEoXCJZAIldrCs8FoNZ"
 COLUMN_URL = "https://drive.google.com/uc?export=download&id=1n5ZcUskBSywo6Lic9s5hQsyZ9NWot_-r"
-MODEL_URL = "https://drive.google.com/uc?export=download&id=18mPXAbmTsLtHiTicU5zqVRnlNuh4JZtq"
 
 # --- Local file paths ---
-SCALER_PATH = "scaler.pkl"
-COLUMN_PATH = "column.pkl"
-MODEL_PATH = "model.pkl"
+MODEL_PATH = "model_compressed.pkl"
+SCALER_PATH = "scaler_compressed.pkl"
+COLUMN_PATH = "column_compressed.pkl"
 
 # --- Download function ---
 def download_file(url, path):
@@ -25,17 +25,17 @@ def download_file(url, path):
         with open(path, "wb") as f:
             f.write(r.content)
 
-# --- Download all files if missing ---
+# Download all files if missing
+download_file(MODEL_URL, MODEL_PATH)
 download_file(SCALER_URL, SCALER_PATH)
 download_file(COLUMN_URL, COLUMN_PATH)
-download_file(MODEL_URL, MODEL_PATH)
 
 # --- Load model and preprocessing ---
-model = pickle.load(open(MODEL_PATH,"rb"))
-le_dict = pickle.load(open(COLUMN_PATH,"rb"))
-scaler = pickle.load(open(SCALER_PATH,"rb"))
+model = joblib.load(MODEL_PATH)
+scaler = joblib.load(SCALER_PATH)
+le_dict = joblib.load(COLUMN_PATH)
 
-# --- Sidebar inputs ---
+# --- Sidebar Inputs ---
 st.sidebar.header("Enter Flight Details")
 airline = st.sidebar.selectbox("Airline", le_dict['airline'].classes_)
 source = st.sidebar.selectbox("Source City", le_dict['source_city'].classes_)
@@ -63,9 +63,7 @@ input_vector = np.array([
 # Scale numeric columns (duration, stops, days_left)
 input_vector[:,6:] = scaler.transform(input_vector[:,6:])
 
-# --- Prediction button ---
+# --- Prediction ---
 if st.button("Predict Fare"):
     price = model.predict(input_vector)[0]
     st.success(f"💰 Estimated Flight Fare: ₹ {round(price,2)}")
-
-    
