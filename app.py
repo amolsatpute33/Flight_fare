@@ -106,3 +106,4 @@ if st.button("Predict Fare 💰"):
     except Exception as e:
         st.error("❌ Prediction failed")
         st.code(str(e))
+
