@@ -1,13 +1,23 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+import streamlit as st
 import joblib
+import gdown
+import os
 import numpy as np
 
-app = Flask(__name__)
-CORS(app)
+st.title("✈️ Flight Fare Prediction")
 
-# Load model
-data = joblib.load("flight_fare.pkl")
+MODEL_URL = "https://drive.google.com/uc?id=1BH0C5HxnixA4Bbt5BXmuKSLgkNiin64B"
+MODEL_PATH = "model.pkl"
+
+@st.cache_resource
+def load_model():
+    if not os.path.exists(MODEL_PATH):
+        st.write("Downloading model...")
+        gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+
+    return joblib.load(MODEL_PATH)
+
+data = load_model()
 
 model = data["model"]
 scaler = data["scaler"]
@@ -15,32 +25,22 @@ le_airline = data["le_airline"]
 le_class = data["le_class"]
 le_stops = data["le_stops"]
 
-@app.route('/')
-def home():
-    return "Flight Fare Prediction API Running 🚀"
+st.success("Model Loaded ✅")
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        data = request.json
+airline = st.selectbox("Airline", le_airline.classes_)
+stops = st.selectbox("Stops", le_stops.classes_)
+flight_class = st.selectbox("Class", le_class.classes_)
+duration = st.number_input("Duration", 0.0, 20.0)
 
-        airline = le_airline.transform([data['airline']])[0]
-        stops = le_stops.transform([data['stops']])[0]
-        flight_class = le_class.transform([data['class']])[0]
-        duration = float(data['duration'])
+if st.button("Predict"):
+    a = le_airline.transform([airline])[0]
+    s = le_stops.transform([stops])[0]
+    c = le_class.transform([flight_class])[0]
 
-        input_data = np.array([[airline, stops, flight_class, duration]])
-        input_scaled = scaler.transform(input_data)
+    input_data = scaler.transform([[a, s, c, duration]])
+    pred = model.predict(input_data)[0]
 
-        prediction = model.predict(input_scaled)[0]
+    st.success(f"💰 Price: ₹ {round(pred,2)}")
 
-        return jsonify({
-            "price": round(prediction, 2)
-        })
 
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-if __name__ == "__main__":
-    app.run(debug=True)
-    
+        
