@@ -1,51 +1,36 @@
 import streamlit as st
-import numpy as np
-import os
-import gdown
 import pickle
+import pandas as pd
 
-# ✅ Google Drive file ID
-file_id = "1ocTS-tA_tRFvbWxX_iNHnFxGbsNcXXe5"
-
-# ✅ Direct download URL
-url = f"https://drive.google.com/uc?id={file_id}"
-
-# ✅ Download model only once
-if not os.path.exists("model.pkl"):
-    gdown.download(url, "model.pkl", quiet=False)
-
-# ✅ Load model
-model, le = pickle.load(open("model.pkl", "rb"))
+# Load model
+model = pickle.load(open("model.pkl", "rb"))
+columns = pickle.load(open("columns.pkl", "rb"))
 
 st.title("✈️ Flight Fare Prediction App")
 
-# Inputs
-airline = st.selectbox("Airline", ["SpiceJet", "AirAsia", "Vistara", "GO_FIRST"])
-flight = st.number_input("Flight Code", value=1000)
-source_city = st.selectbox("Source City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"])
-departure_time = st.selectbox("Departure Time", ["Morning", "Afternoon", "Evening", "Night", "Early_Morning"])
-stops = st.selectbox("Stops", ["zero", "one", "two_or_more"])
-arrival_time = st.selectbox("Arrival Time", ["Morning", "Afternoon", "Evening", "Night", "Early_Morning"])
-destination_city = st.selectbox("Destination City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"])
-class_type = st.selectbox("Class", ["Economy", "Business"])
-duration = st.number_input("Duration", value=2.5)
-days_left = st.slider("Days Left", 1, 50, 5)
+st.write("Enter Flight Details:")
 
-# Prepare input
-input_data = np.array([[airline, flight, source_city, departure_time,
-                        stops, arrival_time, destination_city,
-                        class_type, duration, days_left]])
+# User Inputs
+airline = st.number_input("Airline", 0, 10)
+flight = st.number_input("Flight Code", 0, 2000)
+source_city = st.number_input("Source City", 0, 10)
+departure_time = st.number_input("Departure Time", 0, 10)
+stops = st.number_input("Stops", 0, 5)
+arrival_time = st.number_input("Arrival Time", 0, 10)
+destination_city = st.number_input("Destination City", 0, 10)
+class_type = st.number_input("Class", 0, 2)
+duration = st.number_input("Duration (hrs)", 0.0, 20.0)
+days_left = st.number_input("Days Left", 0, 50)
 
-# Encode categorical
-for i in range(input_data.shape[1]):
-    try:
-        input_data[:, i] = le.transform(input_data[:, i])
-    except:
-        pass
+# Prediction button
+if st.button("Predict Price 💰"):
 
-input_data = input_data.astype(float)
+    input_data = pd.DataFrame([[airline, flight, source_city,
+                                departure_time, stops, arrival_time,
+                                destination_city, class_type,
+                                duration, days_left]],
+                              columns=columns)
 
-# Prediction
-if st.button("Predict Price"):
     prediction = model.predict(input_data)
-    st.success(f"Estimated Price: ₹ {int(prediction[0])}")
+
+    st.success(f"Estimated Flight Price: ₹ {int(prediction[0])}")
