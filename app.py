@@ -1,59 +1,67 @@
 import streamlit as st
+import pandas as pd
 import joblib
 import gdown
 import os
-import numpy as np
 
-st.title("✈️ Flight Fare Prediction")
+st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
+st.title("✈️ Flight Fare Prediction App")
 
+# -----------------------------
+# MODEL DOWNLOAD FROM GOOGLE DRIVE
+# -----------------------------
 MODEL_URL = "https://drive.google.com/uc?id=1BH0C5HxnixA4Bbt5BXmuKSLgkNiin64B"
 MODEL_PATH = "model.pkl"
 
 @st.cache_resource
 def load_model():
     if not os.path.exists(MODEL_PATH):
-        st.write("Downloading model...")
+        st.write("Downloading model from Google Drive...")
         gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
-    return joblib.load(MODEL_PATH)
+    data = joblib.load(MODEL_PATH)
+    return data["model"], data["columns"]
 
-model = load_model()
+model, columns = load_model()
+st.success("Model Loaded Successfully ✅")
 
-st.success("Model Loaded ✅")
-
-# -------------------------
-# INPUTS (match training)
-# -------------------------
-airline = st.selectbox("Airline", ["IndiGo", "Air India", "SpiceJet"])
-stops = st.selectbox("Stops", ["zero", "one", "two"])
+# -----------------------------
+# USER INPUT
+# -----------------------------
+airline = st.selectbox("Airline", ["SpiceJet", "AirAsia", "Vistara", "GO_FIRST", "IndiGo", "Air India"])
+flight = st.text_input("Flight Code (e.g. SG-8709)")
+source_city = st.selectbox("Source City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"])
+departure_time = st.selectbox("Departure Time", ["Early_Morning", "Morning", "Afternoon", "Evening", "Night", "Late_Night"])
+stops = st.selectbox("Stops", ["zero", "one", "two_or_more"])
+arrival_time = st.selectbox("Arrival Time", ["Early_Morning", "Morning", "Afternoon", "Evening", "Night", "Late_Night"])
+destination_city = st.selectbox("Destination City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"])
 flight_class = st.selectbox("Class", ["Economy", "Business"])
-duration = st.number_input("Duration", 0.0, 20.0)
+duration = st.number_input("Duration (hours)", 0.0, 20.0)
+days_left = st.number_input("Days Left", 1, 50)
 
-# -------------------------
-# MANUAL LABEL ENCODING
-# -------------------------
-def encode():
-    airline_map = {"IndiGo": 0, "Air India": 1, "SpiceJet": 2}
-    stops_map = {"zero": 0, "one": 1, "two": 2}
-    class_map = {"Economy": 0, "Business": 1}
-
-    return [
-        airline_map.get(airline, 0),
-        stops_map.get(stops, 0),
-        class_map.get(flight_class, 0),
-        duration
-    ]
-
-# -------------------------
-# PREDICT
-# -------------------------
-if st.button("Predict"):
+# -----------------------------
+# PREDICTION
+# -----------------------------
+if st.button("Predict Price 💰"):
     try:
-        input_data = np.array([encode()])
+        input_dict = {
+            "airline": airline,
+            "flight": flight,
+            "source_city": source_city,
+            "departure_time": departure_time,
+            "stops": stops,
+            "arrival_time": arrival_time,
+            "destination_city": destination_city,
+            "class": flight_class,
+            "duration": duration,
+            "days_left": days_left
+        }
 
-        prediction = model.predict(input_data)[0]
+        input_df = pd.DataFrame([input_dict])
 
-        st.success(f"💰 Price: ₹ {round(prediction, 2)}")
+        prediction = model.predict(input_df)[0]
+        st.success(f"✈️ Estimated Price: ₹ {round(prediction, 2)}")
 
     except Exception as e:
         st.error(f"Error: {e}")
+    
