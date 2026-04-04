@@ -1,71 +1,59 @@
-# app.py
 import streamlit as st
-import pandas as pd
 import joblib
 import gdown
 import os
+import pandas as pd
 
-st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
-st.title("✈️ Flight Fare Prediction System")
+st.title("✈️ Flight Fare Prediction")
 
-# -----------------------------
-# 1️⃣ Download model from Google Drive
-# -----------------------------
 MODEL_ID = "1BH0C5HxnixA4Bbt5BXmuKSLgkNiin64B"
 MODEL_URL = f"https://drive.google.com/uc?id={MODEL_ID}"
 MODEL_PATH = "model.pkl"
 
+# Download model if not exists
 if not os.path.exists(MODEL_PATH):
-    st.info("Downloading model from Google Drive...")
+    st.info("Downloading model...")
     gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
-    st.success("Model downloaded successfully!")
+    st.success("Downloaded!")
 
-# -----------------------------
-# 2️⃣ Load model
-# -----------------------------
+# Safe load
 @st.cache_data
 def load_model():
     data = joblib.load(MODEL_PATH)
-    return data["model"], data["columns"]
+    # Check type
+    if isinstance(data, dict):
+        return data["model"], data["columns"]
+    else:
+        # If directly pipeline
+        return data, None
 
 model, model_columns = load_model()
+st.success("Model Loaded ✅")
 
-# -----------------------------
-# 3️⃣ User Input
-# -----------------------------
-def user_input():
-    data = {
-        "airline": st.selectbox("Airline", ["SpiceJet", "AirAsia", "Vistara", "GO_FIRST", "IndiGo", "Air India"]),
-        "flight": st.text_input("Flight Code (e.g., SG-8709)"),
-        "source_city": st.selectbox("Source City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"]),
-        "departure_time": st.selectbox("Departure Time", ["Early_Morning", "Morning", "Afternoon", "Evening", "Night", "Late_Night"]),
-        "stops": st.selectbox("Stops", ["zero", "one", "two_or_more"]),
-        "arrival_time": st.selectbox("Arrival Time", ["Early_Morning", "Morning", "Afternoon", "Evening", "Night", "Late_Night"]),
-        "destination_city": st.selectbox("Destination City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"]),
-        "class": st.selectbox("Class", ["Economy", "Business"]),
-        "duration": st.number_input("Duration (hours)", 0.0, 20.0, step=0.1),
-        "days_left": st.number_input("Days Left for Flight", 1, 50, step=1)
-    }
+# Example input for testing
+input_data = pd.DataFrame([{
+    "airline": "SpiceJet",
+    "flight": "SG-8709",
+    "source_city": "Delhi",
+    "departure_time": "Evening",
+    "stops": "zero",
+    "arrival_time": "Night",
+    "destination_city": "Mumbai",
+    "class": "Economy",
+    "duration": 2.17,
+    "days_left": 1
+}])
 
-    df = pd.DataFrame([data])
-
-    # Ensure columns match training
+# Ensure all columns exist
+if model_columns is not None:
     for col in model_columns:
-        if col not in df.columns:
-            df[col] = 0
-    df = df[model_columns]
-    return df
+        if col not in input_data.columns:
+            input_data[col] = 0
+    input_data = input_data[model_columns]
 
-input_df = user_input()
-
-# -----------------------------
-# 4️⃣ Prediction
-# -----------------------------
-if st.button("Predict Fare 💰"):
-    try:
-        prediction = model.predict(input_df)[0]
-        st.success(f"Estimated Flight Price: ₹ {round(prediction, 2)}")
-    except Exception as e:
-        st.error(f"Prediction Error: {e}")
-
-    
+# Prediction
+try:
+    pred = model.predict(input_data)[0]
+    st.write(f"Predicted Flight Price: ₹ {round(pred, 2)}")
+except Exception as e:
+    st.error(f"Prediction Error: {e}")
