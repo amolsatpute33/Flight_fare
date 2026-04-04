@@ -1,83 +1,76 @@
 import streamlit as st
+import pickle
+import numpy as np
 import pandas as pd
-import joblib
-import gdown
-import os
+from sklearn.preprocessing import LabelEncoder
 
-st.set_page_config(page_title="Flight Fare Prediction", page_icon="✈️")
+# 1️⃣ Load model and scaler
+with open("flight_fare_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
+with open("scaler.pkl", "rb") as f:
+    scaler = pickle.load(f)
+
+# 2️⃣ Load dataset to get unique categories for dropdowns
+data = pd.read_csv("flight_data.csv")
+
+# 3️⃣ Streamlit UI
+st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
 st.title("✈️ Flight Fare Prediction System")
+st.write("Predict your flight ticket price using ML!")
 
-# -------------------------------
-# Download model from Google Drive
-# -------------------------------
-MODEL_ID = "1BH0C5HxnixA4Bbt5BXmuKSLgkNiin64B"
-MODEL_URL = f"https://drive.google.com/uc?id={MODEL_ID}"
-MODEL_PATH = "model.pkl"
+# Dropdowns with unique values
+airline_list = data['airline'].unique()
+source_list = data['source_city'].unique()
+dest_list = data['destination_city'].unique()
+stops_list = data['stops'].unique()
+class_list = data['class'].unique()
 
-if not os.path.exists(MODEL_PATH):
-    st.info("Downloading trained model...")
-    gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
-    st.success("Model downloaded ✅")
+# 4️⃣ User input
+airline = st.selectbox("Airline", airline_list)
+source_city = st.selectbox("Source City", source_list)
+destination_city = st.selectbox("Destination City", dest_list)
+stops = st.selectbox("Stops", stops_list)
+class_type = st.selectbox("Class", class_list)
+duration = st.number_input("Duration (hours)", min_value=0.0, step=0.1)
+days_left = st.number_input("Days Left for Flight", min_value=0, step=1)
 
-# -------------------------------
-# Load model
-# -------------------------------
-@st.cache_data
-def load_model():
-    data = joblib.load(MODEL_PATH)
-    if isinstance(data, dict):
-        return data["model"], data["columns"]
-    return data, None
+# 5️⃣ Predict button
+if st.button("Predict Fare"):
+    # Encode categorical variables
+    le_airline = LabelEncoder()
+    le_airline.fit(data['airline'])
+    airline_encoded = le_airline.transform([airline])[0]
 
-model, model_columns = load_model()
-st.success("Model loaded ✅")
+    le_source = LabelEncoder()
+    le_source.fit(data['source_city'])
+    source_encoded = le_source.transform([source_city])[0]
 
-# -------------------------------
-# User Input Form
-# -------------------------------
-st.header("Enter Flight Details")
+    le_dest = LabelEncoder()
+    le_dest.fit(data['destination_city'])
+    dest_encoded = le_dest.transform([destination_city])[0]
 
-with st.form("flight_form"):
-    airline = st.selectbox("Airline", ["Air India","IndiGo","SpiceJet","Vistara","AirAsia","GO_FIRST"])
-    flight = st.text_input("Flight Code", "SG-8709")
-    source_city = st.selectbox("Source City", ["Delhi","Mumbai","Kolkata","Chennai","Bangalore"])
-    departure_time = st.selectbox("Departure Time", ["Early_Morning","Morning","Afternoon","Evening","Night"])
-    stops = st.selectbox("Stops", ["zero","one","two","three_or_more"])
-    arrival_time = st.selectbox("Arrival Time", ["Early_Morning","Morning","Afternoon","Evening","Night"])
-    destination_city = st.selectbox("Destination City", ["Delhi","Mumbai","Kolkata","Chennai","Bangalore"])
-    travel_class = st.selectbox("Class", ["Economy","Business"])
-    duration = st.number_input("Duration (hours)", min_value=0.5, max_value=20.0, value=2.5, step=0.1)
-    days_left = st.number_input("Days left for travel", min_value=0, max_value=365, value=10, step=1)
+    le_stops = LabelEncoder()
+    le_stops.fit(data['stops'])
+    stops_encoded = le_stops.transform([stops])[0]
+
+    le_class = LabelEncoder()
+    le_class.fit(data['class'])
+    class_encoded = le_class.transform([class_type])[0]
+
+    # Prepare input
+    duration_mins = duration * 60
+    input_data = np.array([[airline_encoded, source_encoded, dest_encoded, stops_encoded, class_encoded, duration_mins, days_left]])
     
-    submitted = st.form_submit_button("Predict Fare")
-
-# -------------------------------
-# Make Prediction
-# -------------------------------
-if submitted:
-    input_df = pd.DataFrame([{
-        "airline": airline,
-        "flight": flight,
-        "source_city": source_city,
-        "departure_time": departure_time,
-        "stops": stops,
-        "arrival_time": arrival_time,
-        "destination_city": destination_city,
-        "class": travel_class,
-        "duration": duration,
-        "days_left": days_left
-    }])
+    # Scale features
+    input_scaled = scaler.transform(input_data)
     
-    # Align columns with training
-    if model_columns is not None:
-        for col in model_columns:
-            if col not in input_df.columns:
-                input_df[col] = 0
-        input_df = input_df[model_columns]
+    # Predict
+    prediction = model.predict(input_scaled)[0]
+    st.success(f"💰 Estimated Flight Fare: ₹{round(prediction, 2)}")
 
-    try:
-        pred_price = model.predict(input_df)[0]
-        st.success(f"Predicted Flight Price: ₹ {round(pred_price, 2)}")
-    except Exception as e:
-        st.error(f"Prediction Error: {e}")
+
+
+    
+
+    
