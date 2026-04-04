@@ -17,30 +17,48 @@ def load_model():
 
     return joblib.load(MODEL_PATH)
 
+# Load model
 data = load_model()
 
-model = data["model"]
-scaler = data["scaler"]
-le_airline = data["le_airline"]
-le_class = data["le_class"]
-le_stops = data["le_stops"]
+# ✅ FIX: model direct load
+model = data
 
 st.success("Model Loaded ✅")
 
-airline = st.selectbox("Airline", le_airline.classes_)
-stops = st.selectbox("Stops", le_stops.classes_)
-flight_class = st.selectbox("Class", le_class.classes_)
-duration = st.number_input("Duration", 0.0, 20.0)
+# -----------------------
+# SIMPLE INPUTS
+# -----------------------
+airline = st.selectbox("Airline", ["IndiGo", "Air India", "SpiceJet"])
+stops = st.selectbox("Stops", ["non-stop", "1 stop", "2 stops"])
+flight_class = st.selectbox("Class", ["Economy", "Business"])
+duration = st.number_input("Duration (hours)", 0.0, 20.0)
 
+# -----------------------
+# MANUAL ENCODING (IMPORTANT)
+# -----------------------
+def encode_inputs(airline, stops, flight_class):
+    airline_map = {"IndiGo":0, "Air India":1, "SpiceJet":2}
+    stops_map = {"non-stop":0, "1 stop":1, "2 stops":2}
+    class_map = {"Economy":0, "Business":1}
+
+    return [
+        airline_map.get(airline, 0),
+        stops_map.get(stops, 0),
+        class_map.get(flight_class, 0),
+        duration
+    ]
+
+# -----------------------
+# PREDICT
+# -----------------------
 if st.button("Predict"):
-    a = le_airline.transform([airline])[0]
-    s = le_stops.transform([stops])[0]
-    c = le_class.transform([flight_class])[0]
+    try:
+        input_data = np.array([encode_inputs(airline, stops, flight_class)])
 
-    input_data = scaler.transform([[a, s, c, duration]])
-    pred = model.predict(input_data)[0]
+        prediction = model.predict(input_data)[0]
 
-    st.success(f"💰 Price: ₹ {round(pred,2)}")
+        st.success(f"💰 Price: ₹ {round(prediction, 2)}")
 
+    except Exception as e:
+        st.error(f"Error: {e}")
 
-        
