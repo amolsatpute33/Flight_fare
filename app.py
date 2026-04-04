@@ -5,21 +5,23 @@ import joblib
 import gdown
 import os
 
-st.title("✈️ Flight Fare Prediction")
+st.set_page_config(page_title="Flight Fare Prediction", layout="centered")
+st.title("✈️ Flight Fare Prediction System")
 
 # -----------------------------
-# 1. Download model from Google Drive
+# 1️⃣ Download model from Google Drive
 # -----------------------------
-MODEL_URL = "https://drive.google.com/uc?id=1BH0C5HxnixA4Bbt5BXmuKSLgkNiin64B"
+MODEL_ID = "1BH0C5HxnixA4Bbt5BXmuKSLgkNiin64B"
+MODEL_URL = f"https://drive.google.com/uc?id={MODEL_ID}"
 MODEL_PATH = "model.pkl"
 
 if not os.path.exists(MODEL_PATH):
     st.info("Downloading model from Google Drive...")
     gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
-    st.success("Model downloaded!")
+    st.success("Model downloaded successfully!")
 
 # -----------------------------
-# 2. Load model
+# 2️⃣ Load model
 # -----------------------------
 @st.cache_data
 def load_model():
@@ -29,7 +31,7 @@ def load_model():
 model, model_columns = load_model()
 
 # -----------------------------
-# 3. User Input
+# 3️⃣ User Input
 # -----------------------------
 def user_input():
     data = {
@@ -41,11 +43,12 @@ def user_input():
         "arrival_time": st.selectbox("Arrival Time", ["Early_Morning", "Morning", "Afternoon", "Evening", "Night", "Late_Night"]),
         "destination_city": st.selectbox("Destination City", ["Delhi", "Mumbai", "Bangalore", "Kolkata", "Hyderabad", "Chennai"]),
         "class": st.selectbox("Class", ["Economy", "Business"]),
-        "duration": st.number_input("Duration (hours)", 0.0, 20.0),
-        "days_left": st.number_input("Days Left", 1, 50)
+        "duration": st.number_input("Duration (hours)", 0.0, 20.0, step=0.1),
+        "days_left": st.number_input("Days Left for Flight", 1, 50, step=1)
     }
+
     df = pd.DataFrame([data])
-    
+
     # Ensure columns match training
     for col in model_columns:
         if col not in df.columns:
@@ -56,15 +59,13 @@ def user_input():
 input_df = user_input()
 
 # -----------------------------
-# 4. Prediction
+# 4️⃣ Prediction
 # -----------------------------
-if st.button("Predict Price 💰"):
+if st.button("Predict Fare 💰"):
     try:
-        price = model.predict(input_df)[0]
-        st.success(f"✈️ Estimated Flight Price: ₹ {round(price, 2)}")
+        prediction = model.predict(input_df)[0]
+        st.success(f"Estimated Flight Price: ₹ {round(prediction, 2)}")
     except Exception as e:
         st.error(f"Prediction Error: {e}")
-      
-
 
     
