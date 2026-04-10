@@ -6,12 +6,7 @@
   </a>
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.9-blue?style=flat-square&logo=python"/>
-  <img src="https://img.shields.io/badge/ML-Random%20Forest-green?style=flat-square"/>
-  <img src="https://img.shields.io/badge/Framework-Streamlit-red?style=flat-square&logo=streamlit"/>
-  <img src="https://img.shields.io/badge/Status-Active-success?style=flat-square"/>
-</p>
+
 
 ---
 
